@@ -19,8 +19,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->timestamps('created_at');
-            $table->timestamps('updated_at')->nullable();
+            $table->timestamps();
         });
     }
 

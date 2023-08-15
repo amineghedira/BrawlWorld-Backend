@@ -19,8 +19,7 @@ return new class extends Migration
             $table->foreign('stat_id')->references('id')->on('stats');
             $table->integer('result');
             $table->integer('status');
-            $table->timestamps('created_at');
-            $table->timestamps('updated_at')->nullable();
+            $table->timestamps();
 
         });
     }

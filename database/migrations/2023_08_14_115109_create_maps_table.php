@@ -18,8 +18,7 @@ return new class extends Migration
             $table->foreign('mode_id')->references('id')->on('modes');
             $table->string('name');
             $table->integer('status');
-            $table->timestamps('created_at');
-            $table->timestamps('updated_at')->nullable();
+            $table->timestamps();
             
         });
     }

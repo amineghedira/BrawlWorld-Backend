@@ -19,8 +19,7 @@ return new class extends Migration
             $table->integer('map_id');
             $table->integer('number_of_picks');
             $table->integer('number_of_wins');
-            $table->timestamps('created_at');
-            $table->timestamps('updated_at')->nullable();
+            $table->timestamps();
         });
     }
 

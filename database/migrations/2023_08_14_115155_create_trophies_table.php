@@ -18,8 +18,7 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('users');
             $table->integer('number_of_trophies');
             $table->integer('trophies_change');
-            $table->timestamps('created_at');
-            $table->timestamps('updated_at')->nullable();
+            $table->timestamps();
         });
     }
 
