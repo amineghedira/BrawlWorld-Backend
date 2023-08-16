@@ -4,8 +4,46 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fe33f98a750b8c5a51b30c78bd3fab21",
+    "content-hash": "3b40f8ddfe3fca3098be1075cd837325",
     "packages": [
+        {
+            "name": "ahsan112/brawlstars-php",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ahsxn/brawl-stars-php.git",
+                "reference": "9eb6666b2afb0b9118222070bb2a04f4774c7618"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ahsxn/brawl-stars-php/zipball/9eb6666b2afb0b9118222070bb2a04f4774c7618",
+                "reference": "9eb6666b2afb0b9118222070bb2a04f4774c7618",
+                "shasum": ""
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "BrawlStars\\": "lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "BrawlStars api wrapper in PHP",
+            "keywords": [
+                "Api Wrapper",
+                "SuperCell",
+                "api",
+                "brawl stars api"
+            ],
+            "support": {
+                "issues": "https://github.com/ahsxn/brawl-stars-php/issues",
+                "source": "https://github.com/ahsxn/brawl-stars-php/tree/master"
+            },
+            "time": "2021-11-14T13:21:16+00:00"
+        },
         {
             "name": "brick/math",
             "version": "0.11.0",
@@ -8113,7 +8151,7 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
