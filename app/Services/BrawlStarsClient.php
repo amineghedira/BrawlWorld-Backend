@@ -33,14 +33,14 @@ class BrawlStarsClient
     {
         $data = $this->request('events/rotation');
         
-        return $data;
+        return $data['items'];
     }
 
     public function getBrawlers()
     {
         $data = $this->request('brawlers');
         
-        return $data['items'];
+        return $data;
     }
 
     private function request(string $route): array
