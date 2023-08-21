@@ -22,6 +22,7 @@ class BrawlStarsClient
 
     public function getPlayerBattleLog(string $playerTag)
     {
+        $playerTag = substr($playerTag, 1);
         $data = $this->request("players/%23{$playerTag}/battlelog");
 
         return $data['items'];

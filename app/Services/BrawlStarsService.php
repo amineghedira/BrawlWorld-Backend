@@ -6,7 +6,7 @@ require 'App/Services/BrawlStarsClient.php' ;
 use App\Services\BrawlStarsClient ;
 
 
-class BrawlStarsServices {
+class BrawlStarsService {
 
     // Properties 
     private $lastTimeChecked;
@@ -14,25 +14,30 @@ class BrawlStarsServices {
 
     // Constructor
     public function __construct($apitoken) {
+
            $this->client = new BrawlStarsClient($apitoken);
            $this->lastTimeChecked = $this->lastTimeChecked();
     }
 
     // Methods
+
+    // returns the time we last sampled a collection of battles
     function lastTimeChecked() {
 
      $format = 'Ymd\THis\.000\Z';
-     $timestamp = time() - (2 * 3600) - (55 * 60); // Current timestamp minus 2 hours and 55 minutes
+     $timestamp = time() - (5 * 3600) - (55 * 60); // Current timestamp minus 5 hours and 55 minutes
 
      return gmdate($format, $timestamp);
     }
 
+    //get battleLog a player with a certain tag
     public function getBattleLog($tag) {
 
         $battleLog = $this->client->getPlayerBattleLog($tag);
         return $battleLog ;
     }
-
+    
+    //check whether the battle has been played after we collected our last sample
     public function checkBattleTime($battle) {
 
         $battleTime = $battle['battleTime'];
@@ -44,6 +49,19 @@ class BrawlStarsServices {
          return false;
     }
 
+    //validate if the battl's mode is one of the main competitive modes
+    public function validMode($mode) {
+
+       $validModes = ['brawlBall','gemGrab','hotZone','heist','bounty','knockout'];
+
+       if (array_search($mode, $validModes) === false)
+           return false ;
+       else
+           return true ;
+        
+    }
+
+    //check if the battle is ranked and and not friendly or a challenge battle
     public function checkBattleType($battle) {
 
         $notRanked = !array_key_exists('type',$battle['battle']);
@@ -56,7 +74,7 @@ class BrawlStarsServices {
 
         if ($type ==='ranked') {
 
-          if( strpos($mode,'Showdown') || $map === null )
+          if( !$this->validMode($mode) || $map === null )
             return false;
 
           else
@@ -66,6 +84,7 @@ class BrawlStarsServices {
         return false ;
     }
 
+    //check if the battle is overall eligible for our sample requirements
     public function checkBattle($battle, $data) { 
         
         $oldBattle = !$this->checkBattleTime($battle) ;
@@ -82,13 +101,12 @@ class BrawlStarsServices {
            if (!$alreadyChecked)
             return 1;
         }
-
-        else
           
-          return 2 ;
+        return 2 ;
 
     }
 
+   // check if the player with the current tag is in the first team
     public function isFirstTeam($players, $tag) {
 
         for ($i=0 ; $i<3 ; $i++){
@@ -102,7 +120,8 @@ class BrawlStarsServices {
          return false;
 
     }
-
+    
+    // returns the relevant information we need about the battle
     public function battleData($battle, $players, $tag){
 
         $mode = $battle['event']['mode'];
@@ -110,7 +129,6 @@ class BrawlStarsServices {
         $result = $battle['battle']['result'];
 
         $data = [
-            'tag' => $tag,
             'mode' => $mode,
             'map' => $map,
             'result' => $result
@@ -137,7 +155,8 @@ class BrawlStarsServices {
         }
         
     }
-
+    
+    // returns an array of battles data
     public function getBattleData($battle, $tag) {
 
        $players = array_merge(...$battle['battle']['teams']);
@@ -146,6 +165,7 @@ class BrawlStarsServices {
 
     }
      
+    //create a unique key for each battle , so we don't double count it in the future
     public function createKey($battle){
 
         $tag = $battle['battle']['starPlayer']['tag'] ;
@@ -153,16 +173,11 @@ class BrawlStarsServices {
         return $key ;
     }
 
+    // check the battleLog of a player, and adds any relevant information about his battles to our sample array
     public function checkBattleLog($tag, $data) { 
         
-        $tagAlreadyChecked = array_search($tag,array_map(fn($element) => $element['tag'], $data));
-        
-        if ($tagAlreadyChecked)
-            return $data;
-
         $battleLog = $this->getBattleLog($tag);
 
-     
         for($i=0; $i<25; $i++) {
 
            $battle = $battleLog[$i];
@@ -179,5 +194,94 @@ class BrawlStarsServices {
 
         return $data ;
     }
+
+    // takes a tag of player and returns another random tag
+    public function getRandomTag($tag) {
+
+        $battleLog = $this->getBattleLog($tag);
+        $randomBattle = mt_rand(0,24) ;
+        $battle = $battleLog[$randomBattle] ;
+
+        if($battle === null)
+            return '#9CQV09G2U' ;
+
+
+        if (array_key_exists('teams', $battle['battle'])) {
+
+           $players = array_merge(...$battle['battle']['teams']);
+           $randomPlayer = mt_rand(0,5); 
+        }   
+
+        else if ($battle['battle']['mode']==='soloShowdown' ) {
+
+           $players = $battle['battle']['players'];
+           $randomPlayer = mt_rand(0,9); 
+        }
+
+        else {
+        $players = $battle['battle']['players'];
+        $randomPlayer = mt_rand(0,1);
+        }
+
+        $randomTag = $players[$randomPlayer]['tag'];
+
+
+        if (strlen($randomTag) < 6)
+           return $tag ;
+
+        else 
+           return $randomTag;
+        
+    }
+
+    // takes a tag of player and returns a new tag that we didn't check before
+    public function getNewTag($tag, $tags) {
+       
+       $randomTag = $this->getRandomTag($tag);
+       $tagAlreadyChecked = array_search($randomTag, $tags); 
+       $counter = 0;
+
+       while($tagAlreadyChecked !== false) {
+
+        if ($counter > 10) {
+          $randomTag = '#9CQV09G2U';
+          $counter = 0 ;
+        }
+
+        $randomTag = $this->getRandomTag($randomTag);
+        $tagAlreadyChecked = array_search($randomTag, $tags);
+        $counter++ ;
+       }
+       
+       return $randomTag ;   
+    }
+   
+    //this function will be used for command.
+    //it takes the tag we will start with, the size of our sample,and returns n battles with their information.
+    public function getSampleData($tag, $n) {
+
+        $data=[] ;
+        $tags=[] ;
+        $sampleSize = $n ;
+    
+        do {
+            
+            $data = $this->checkBattleLog($tag, $data);
+            
+            if (count($data) >= $sampleSize)
+
+                break;
+        
+            array_push($tags, $tag) ;  
+            $tag = $this->getNewTag($tag, $tags);
+
+        } while (true);
+
+        return $data ;
+
+    }
+
+
+
  
 }
