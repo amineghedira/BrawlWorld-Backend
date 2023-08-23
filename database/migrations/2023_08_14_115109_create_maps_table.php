@@ -15,9 +15,9 @@ return new class extends Migration
     {
         Schema::create('maps', function (Blueprint $table) {
             $table->id();
-            $table->foreign('mode_id')->references('id')->on('modes');
+            $table->foreignId('mode_id')->constrained();
+            //$table->foreign('mode_id')->references('id')->on('modes');
             $table->string('name');
-            $table->integer('status');
             $table->timestamps();
             
         });

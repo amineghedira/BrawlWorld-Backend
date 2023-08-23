@@ -24,6 +24,8 @@ class BrawlStarsClient
     {
         $playerTag = substr($playerTag, 1);
         $data = $this->request("players/%23{$playerTag}/battlelog");
+        if ($data === null)
+           return null ;
 
         return $data['items'];
     }

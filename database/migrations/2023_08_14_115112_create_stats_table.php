@@ -15,10 +15,10 @@ return new class extends Migration
     {
         Schema::create('stats', function (Blueprint $table) {
             $table->id();
-            $table->integer('brawler_id');
-            $table->integer('map_id');
-            $table->integer('number_of_picks');
-            $table->integer('number_of_wins');
+            $table->foreignId('brawler_id')->constrained();
+            $table->foreignId('map_id')->constrained();
+            $table->integer('number_of_picks')->default(0);
+            $table->integer('number_of_wins')->default(0);
             $table->timestamps();
         });
     }

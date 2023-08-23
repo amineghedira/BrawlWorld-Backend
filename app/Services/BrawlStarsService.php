@@ -2,7 +2,6 @@
 
 namespace App\Services ;
 
-require 'App/Services/BrawlStarsClient.php' ;
 use App\Services\BrawlStarsClient ;
 
 
@@ -178,7 +177,12 @@ class BrawlStarsService {
         
         $battleLog = $this->getBattleLog($tag);
 
-        for($i=0; $i<25; $i++) {
+        if($battleLog === null)
+            return $data ;
+
+        $n = count($battleLog);
+
+        for($i=0; $i<$n; $i++) {
 
            $battle = $battleLog[$i];
 
@@ -199,28 +203,40 @@ class BrawlStarsService {
     public function getRandomTag($tag) {
 
         $battleLog = $this->getBattleLog($tag);
-        $randomBattle = mt_rand(0,24) ;
-        $battle = $battleLog[$randomBattle] ;
 
-        if($battle === null)
+        if($battleLog === null)
             return '#9CQV09G2U' ;
 
+        $n = count($battleLog) ;
+        $counter=0;
+        
+        do {
 
-        if (array_key_exists('teams', $battle['battle'])) {
+        $counter++ ;
+        if ($counter > 10)
+           return '#9CQV09G2U' ;
+        $randomBattle = mt_rand(0,$n-1) ;
+        $battle = $battleLog[$randomBattle]['battle'] ;
+        $notRanked = !array_key_exists('type',$battle) || $battle['type'] === 'friendly' ;
 
-           $players = array_merge(...$battle['battle']['teams']);
+        } while($notRanked );
+
+
+        if (array_key_exists('teams', $battle)) {
+
+           $players = array_merge(...$battle['teams'])  ;
            $randomPlayer = mt_rand(0,5); 
         }   
 
-        else if ($battle['battle']['mode']==='soloShowdown' ) {
+        else if ($battle['mode']==='soloShowdown' ) {
 
-           $players = $battle['battle']['players'];
+           $players = $battle['players'];
            $randomPlayer = mt_rand(0,9); 
         }
 
         else {
-        $players = $battle['battle']['players'];
-        $randomPlayer = mt_rand(0,1);
+           $players = $battle['players'];
+           $randomPlayer = mt_rand(0,1);
         }
 
         $randomTag = $players[$randomPlayer]['tag'];
@@ -241,7 +257,7 @@ class BrawlStarsService {
        $tagAlreadyChecked = array_search($randomTag, $tags); 
        $counter = 0;
 
-       while($tagAlreadyChecked !== false) {
+       while($tagAlreadyChecked !== false || !$this->getBattleLog($randomTag)) {
 
         if ($counter > 10) {
           $randomTag = '#9CQV09G2U';
@@ -263,21 +279,18 @@ class BrawlStarsService {
         $data=[] ;
         $tags=[] ;
         $sampleSize = $n ;
-    
-        do {
-            
+        $count = 0;
+        while(count($data) < $sampleSize) {
+            $count++ ;
             $data = $this->checkBattleLog($tag, $data);
-            
-            if (count($data) >= $sampleSize)
-
-                break;
         
             array_push($tags, $tag) ;  
             $tag = $this->getNewTag($tag, $tags);
 
-        } while (true);
-
+        } 
+        echo $count ;
         return $data ;
+        
 
     }
 
