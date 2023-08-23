@@ -26,7 +26,10 @@ class BrawlStarsClient
         $data = $this->request("players/%23{$playerTag}/battlelog");
         if ($data === null)
            return null ;
-
+        
+        if (!array_key_exists('items', $data))
+            return null;
+        
         return $data['items'];
     }
 

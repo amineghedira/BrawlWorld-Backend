@@ -3,6 +3,7 @@
 namespace App\Services ;
 
 use App\Services\BrawlStarsClient ;
+use Illuminate\Support\Facades\Log;
 
 
 class BrawlStarsService {
@@ -205,7 +206,7 @@ class BrawlStarsService {
         $battleLog = $this->getBattleLog($tag);
 
         if($battleLog === null)
-            return '#9CQV09G2U' ;
+            return env('ORIGINAL_TAG') ;
 
         $n = count($battleLog) ;
         $counter=0;
@@ -214,7 +215,7 @@ class BrawlStarsService {
 
         $counter++ ;
         if ($counter > 10)
-           return '#9CQV09G2U' ;
+           return env('ORIGINAL_TAG') ;
         $randomBattle = mt_rand(0,$n-1) ;
         $battle = $battleLog[$randomBattle]['battle'] ;
         $notRanked = !array_key_exists('type',$battle) || $battle['type'] === 'friendly' ;
@@ -260,7 +261,7 @@ class BrawlStarsService {
        while($tagAlreadyChecked !== false || !$this->getBattleLog($randomTag)) {
 
         if ($counter > 10) {
-          $randomTag = '#9CQV09G2U';
+          $randomTag = env('ORIGINAL_TAG');
           $counter = 0 ;
         }
 
@@ -288,7 +289,7 @@ class BrawlStarsService {
             $tag = $this->getNewTag($tag, $tags);
 
         } 
-        echo $count ;
+        Log::info('BrawlStarsService completed after '.$count.' iterations' ) ;
         return $data ;
         
 
