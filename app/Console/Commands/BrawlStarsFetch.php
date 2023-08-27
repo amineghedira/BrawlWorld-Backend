@@ -31,6 +31,8 @@ class BrawlStarsFetch extends Command
 
     $repo = new BrawlStarsRepository();
     $repo->loadToDataBase($data) ;
+    $repo = new BrawlStarsRepository();
+    $repo->calculateStats();
 
     Log::info('fetchBS command run successfully!');
        

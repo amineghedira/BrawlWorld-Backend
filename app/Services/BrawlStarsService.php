@@ -276,7 +276,7 @@ class BrawlStarsService {
     //this function will be used for command.
     //it takes the tag we will start with, the size of our sample,and returns n battles with their information.
     public function getSampleData($tag, $n) {
-
+        print_r('oy');
         $data=[] ;
         $tags=[] ;
         $sampleSize = $n ;
@@ -287,7 +287,7 @@ class BrawlStarsService {
         
             array_push($tags, $tag) ;  
             $tag = $this->getNewTag($tag, $tags);
-
+            print_r('iteration '.$count);
         } 
         Log::info('BrawlStarsService completed after '.$count.' iterations' ) ;
         return $data ;

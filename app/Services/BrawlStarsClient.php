@@ -29,8 +29,8 @@ class BrawlStarsClient
         
         if (!array_key_exists('items', $data))
             return null;
-        
-        return $data['items'];
+
+      return $data['items'];
     }
 
     
@@ -49,7 +49,7 @@ class BrawlStarsClient
         return $data;
     }
 
-    private function request(string $route): array
+    private function request(string $route)
     {
         $ch = curl_init($this->apiUrl . $route);
 

@@ -16,6 +16,8 @@ return new class extends Migration
         Schema::create('modes', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->decimal('pick_rate', 4, 2)->default(0);
+            $table->integer('pick_rate_rank')->default(0);
             $table->timestamps();
         });
     }

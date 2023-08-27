@@ -2,10 +2,11 @@
 
 namespace App\Repositories ;
 
-use App\Models\Stat ;
-use App\Models\Map ;
-use App\Models\Mode ;
 use App\Models\Brawler ;
+use App\Models\Mode ;
+use App\Models\Map ;
+use App\Models\BrawlerMap ;
+use App\Models\BrawlerMode ;
 
 
 class BrawlStarsRepository {
@@ -49,7 +50,7 @@ class BrawlStarsRepository {
        
     }
 
-    public function addBrawlerToStat($brawler_id) {
+    public function addBrawlerToMaps($brawler_id) {
 
         $map_ids = Map::pluck('id')->toArray();
         $rows = [];
@@ -62,10 +63,26 @@ class BrawlStarsRepository {
             array_push($rows, $row );
         }
 
-        Stat::insert($rows) ;
+        BrawlerMap::insert($rows) ;
     }
 
-    public function addMapToStat($map_id) {
+    public function addBrawlerToModes($brawler_id) {
+
+        $mode_ids = Mode::pluck('id')->toArray();
+        $rows = [];
+
+        foreach ($mode_ids as $mode_id) {
+            $row = [
+                'brawler_id' => $brawler_id,
+                'mode_id' => $mode_id
+            ];
+            array_push($rows, $row );
+        }
+
+        BrawlerMode::insert($rows) ;
+    }
+
+    public function addMapToBrawlers($map_id) {
 
         $brawlers_ids = Brawler::pluck('id')->toArray();
         $rows = [];
@@ -78,7 +95,22 @@ class BrawlStarsRepository {
             array_push($rows, $row );
         }
 
-        Stat::insert($rows) ;
+        BrawlerMap::insert($rows) ;
+    }
+    public function addModeToBrawlers($mode_id) {
+
+        $brawlers_ids = Brawler::pluck('id')->toArray();
+        $rows = [];
+
+        foreach ($brawlers_ids as $brawler_id) {
+            $row = [
+                'brawler_id' => $brawler_id,
+                'mode_id' => $mode_id
+            ];
+            array_push($rows, $row );
+        }
+
+        BrawlerMode::insert($rows) ;
     }
 
     public function processBattleData($battle){
@@ -96,12 +128,16 @@ class BrawlStarsRepository {
 
                $this->addMode($mode_name) ;
                $mode = Mode::where('name', $mode_name)->first() ;
+               $mode_id = $mode->id ;  
+               $this-> addModeToBrawlers($mode_id);
             }
-            
-            $mode_id = $mode->id ;   
+
+            else
+               $mode_id = $mode->id ;  
+
             $this->addMap($map_name, $mode_id);
             $map_id = Map::where('name', $map_name)->first()->id ;
-            $this-> addMapToStat($map_id);
+            $this-> addMapToBrawlers($map_id);
         }
         else 
             $map_id = $map->id ;
@@ -120,7 +156,8 @@ class BrawlStarsRepository {
 
                $this->addBrawler($brawler_name);
                $brawler_id = Brawler::where('name', $brawler_name)->first()->id;
-               $this-> addBrawlerToStat($brawler_id);
+               $this->addBrawlerToMaps($brawler_id);
+               $this->addBrawlerToModes($brawler_id);
             } 
 
             else
@@ -139,7 +176,7 @@ class BrawlStarsRepository {
 
             $brawler_id = $battleData[$i];
 
-            Stat::where('map_id', $map_id)
+            BrawlerMap::where('map_id', $map_id)
             ->where('brawler_id', $brawler_id)
             ->increment('number_of_picks');
         }
@@ -153,13 +190,13 @@ class BrawlStarsRepository {
 
             $brawler_id = $battleData[$i];
            
-            Stat::where('map_id', $map_id)
+            BrawlerMap::where('map_id', $map_id)
             ->where('brawler_id', $brawler_id)
             ->increment('number_of_wins');
         }
     }
 
-    public function loadToStat($battle) {
+    public function loadBattle($battle) {
 
         $battleData = $this->processBattleData($battle) ;
         $result = $battle['result'];
@@ -181,11 +218,136 @@ class BrawlStarsRepository {
 
         foreach($data as $battle) {
 
-                  $this->loadToStat($battle);
+                  $this->loadBattle($battle);
         }
 
 
     }
 
+    public function rank($rows, $rankWinRate){
+
+        $rows = $rows->sortByDesc('pick_rate');
+           $counter=1;
+        foreach ($rows as $row){
+
+            $row->pick_rate_rank = $counter ;
+            $row->save();
+            $counter++;
+        }
+        
+        if ($rankWinRate){
+            
+            $rows = $rows->sortByDesc('win_rate');
+            $counter=1;
+
+            foreach ($rows as $index => $row) {
+                $row->win_rate_rank = $counter ;
+                $row->save(); 
+                $counter++;       
+            }
+        }
+
+      
+    }
+    public function brawlerMapStats() {
+        $map_ids = Map::pluck('id')->toArray();
+        foreach($map_ids as $map_id) {
+
+          $rows = BrawlerMap::where('map_id', $map_id)->get();
+
+          $total_picks = $rows->sum('number_of_picks');
+          $total_wins = $rows->sum('number_of_wins');
+
+          foreach ($rows as $row) {
+  
+            $picks = $row->number_of_picks;
+            $wins = $row->number_of_wins;
+            $row->pick_rate = $picks/$total_picks;
+            $row->win_rate = $wins/$total_wins;
+            $row->save();
+            }
+
+          $this->rank($rows,true);
+
+        }
+    }
+
+    public function brawlerModeStats() {
+        $mode_ids = Mode::pluck('id')->toArray();
+
+        foreach($mode_ids as $mode_id) {
+
+            $map_ids = Map::where('mode_id', $mode_id)->pluck('id')->toArray();
+
+            $brawlerMapRows = BrawlerMap::whereIn('map_id', $map_ids)->get();
+  
+            $total_picks = $brawlerMapRows->sum('number_of_picks');
+            $total_wins = $brawlerMapRows->sum('number_of_wins');
+            
+            $brawlerModeRows = BrawlerMode::whereIn('mode_id', $mode_ids)->get();
+            foreach($brawlerModeRows as $brawlerModeRow) {
+                $brawler_id = $brawlerModeRow->brawler_id ;
+                $rows = $brawlerMapRows->filter(fn($item) => $item->brawler_id === $brawler_id);
+                $picks = $rows->sum('number_of_picks');
+                $wins = $rows->sum('number_of_wins');
+                $brawlerModeRow->pick_rate = $picks/$total_picks;
+                $brawlerModeRow->win_rate = $wins/$total_wins;
+                $brawlerModeRow->save();
+            }
+
+            $this->rank($brawlerModeRows,true);
+        }
+
+    }
+
+    public function generalStats() {
+
+        $total_picks = BrawlerMap::sum('number_of_picks');
+        $total_wins = BrawlerMap::sum('number_of_wins');
+        $brawlerRows = Brawler::where([])->get();
+        $modeRows = Mode::all();
+        $mapRows =  Map::all();
+        foreach($brawlerRows as $brawlerRow){
+    
+            $rows = BrawlerMap::where('brawler_id', $brawlerRow->id)->get();
+            $picks = $rows->sum('number_of_picks');
+            $wins = $rows->sum('number_of_wins');
+            $brawlerRow->pick_rate = $picks/$total_picks;
+            $brawlerRow->win_rate = $wins/$total_wins;
+            $brawlerRow->save();
+        }
+
+        $this->rank($brawlerRows,true);
+
+        foreach($mapRows as $mapRow){
+            $rows = BrawlerMap::where('map_id', $mapRow->id)->get();
+            $picks = $rows->sum('number_of_picks');
+            $mapRow->pick_rate = $picks/$total_picks;
+            $mapRow->save();
+
+        }
+
+        $this->rank($mapRows,false);
+
+        foreach($modeRows as $modeRow){
+
+            $map_ids = Map::where('mode_id', $modeRow->id)->pluck('id')->toArray();
+            $rows = BrawlerMap::whereIn('map_id', $map_ids)->get();
+            $picks = $rows->sum('number_of_picks');
+            $modeRow->pick_rate = $picks/$total_picks;
+            $modeRow->save();
+    
+        }
+        $this->rank($modeRows,false);
+
+    }
+
+    public function calculateStats() {
+        print_r("hey");
+        $this->brawlerMapStats();
+        $this->brawlerModeStats();
+        $this->generalStats();
+
+    }
 
 }

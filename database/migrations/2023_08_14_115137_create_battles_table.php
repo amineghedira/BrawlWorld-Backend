@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('battles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
-            $table->foreignId('stat_id')->constrained();
+            $table->foreignId('brawler_map_id')->constrained();
             $table->integer('result');
             $table->integer('status');
             $table->timestamps();
