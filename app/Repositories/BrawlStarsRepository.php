@@ -256,14 +256,16 @@ class BrawlStarsRepository {
           $rows = BrawlerMap::where('map_id', $map_id)->get();
 
           $total_picks = $rows->sum('number_of_picks');
-          $total_wins = $rows->sum('number_of_wins');
 
           foreach ($rows as $row) {
   
             $picks = $row->number_of_picks;
             $wins = $row->number_of_wins;
             $row->pick_rate = $picks/$total_picks;
-            $row->win_rate = $wins/$total_wins;
+            if($picks===0)
+                $row->win_rate = 0 ;
+            else
+                $row->win_rate = $wins/$picks;
             $row->save();
             }
 
@@ -282,16 +284,19 @@ class BrawlStarsRepository {
             $brawlerMapRows = BrawlerMap::whereIn('map_id', $map_ids)->get();
   
             $total_picks = $brawlerMapRows->sum('number_of_picks');
-            $total_wins = $brawlerMapRows->sum('number_of_wins');
             
-            $brawlerModeRows = BrawlerMode::whereIn('mode_id', $mode_ids)->get();
+            $brawlerModeRows = BrawlerMode::where('mode_id', $mode_id)->get();
             foreach($brawlerModeRows as $brawlerModeRow) {
                 $brawler_id = $brawlerModeRow->brawler_id ;
                 $rows = $brawlerMapRows->filter(fn($item) => $item->brawler_id === $brawler_id);
                 $picks = $rows->sum('number_of_picks');
                 $wins = $rows->sum('number_of_wins');
                 $brawlerModeRow->pick_rate = $picks/$total_picks;
-                $brawlerModeRow->win_rate = $wins/$total_wins;
+                if($picks===0)
+                   $brawlerModeRow->win_rate = 0 ;
+                else
+                   $brawlerModeRow->win_rate = $wins/$picks;
+
                 $brawlerModeRow->save();
             }
 
@@ -303,7 +308,6 @@ class BrawlStarsRepository {
     public function generalStats() {
 
         $total_picks = BrawlerMap::sum('number_of_picks');
-        $total_wins = BrawlerMap::sum('number_of_wins');
         $brawlerRows = Brawler::where([])->get();
         $modeRows = Mode::all();
         $mapRows =  Map::all();
@@ -313,7 +317,7 @@ class BrawlStarsRepository {
             $picks = $rows->sum('number_of_picks');
             $wins = $rows->sum('number_of_wins');
             $brawlerRow->pick_rate = $picks/$total_picks;
-            $brawlerRow->win_rate = $wins/$total_wins;
+            $brawlerRow->win_rate = $wins/$picks;
             $brawlerRow->save();
         }
 
@@ -343,7 +347,6 @@ class BrawlStarsRepository {
     }
 
     public function calculateStats() {
-        print_r("hey");
         $this->brawlerMapStats();
         $this->brawlerModeStats();
         $this->generalStats();

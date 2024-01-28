@@ -18,9 +18,9 @@ class BrawlStarsService {
            $this->client = new BrawlStarsClient($apitoken);
            $this->lastTimeChecked = $this->lastTimeChecked();
     }
-
+    
     // Methods
-
+    
     // returns the time we last sampled a collection of battles
     function lastTimeChecked() {
 
@@ -120,13 +120,36 @@ class BrawlStarsService {
          return false;
 
     }
+
+    public function formatMode($name) {
+     $formatted = strtoupper($name[0]);
+     $length = strlen($name);
+
+     for ($i =1; $i<$length ; $i++){
+        if(ctype_upper($name[$i]))
+
+            $formatted = $formatted.'-'.$name[$i];
+        else
+            $formatted = $formatted.$name[$i];
+     }
+     return $formatted;
+
+    }
+    public function formatBrawler($name) {
+        $formatted= $name[0].strtolower(substr($name,1));
+        return $formatted;
+
+    }
     
     // returns the relevant information we need about the battle
     public function battleData($battle, $players, $tag){
 
         $mode = $battle['event']['mode'];
+        $mode = $this->formatMode($mode);
         $map = $battle['event']['map'];
-        $result = $battle['battle']['result'];
+        $map = str_replace(" ", "-", $map);
+       $result = $battle['battle']['result'];
+
 
         $data = [
             'mode' => $mode,
@@ -136,7 +159,7 @@ class BrawlStarsService {
         
         $isFirstTeam = $this->isFirstTeam($players, $tag);
 
-        $brawlers = array_map(fn($player) => $player['brawler']['name'], $players) ;
+        $brawlers = array_map(fn($player) => $this->formatBrawler($player['brawler']['name']), $players) ;
 
         $keys = array_map( fn($i) => 'brawler'.$i, range(1, 6));
         
